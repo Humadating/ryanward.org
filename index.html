@@ -86,7 +86,34 @@
         .expertise-column {
             width: 48%;
         }
-        /* Styles for printing */
+
+        /* --- START OF RESPONSIVE CODE --- */
+        /* These styles only apply on screens 600px or less */
+        @media (max-width: 600px) {
+            body {
+                padding: 15px;
+            }
+            .resume-container {
+                padding: 20px;
+            }
+            .item-header {
+                flex-direction: column; /* Stack title and date vertically */
+                align-items: flex-start;
+            }
+            .item-location-date {
+                text-align: left; /* Align date to the left */
+                margin-top: 5px;
+            }
+            .expertise-container {
+                flex-direction: column; /* Stack the expertise columns */
+            }
+            .expertise-column {
+                width: 100%; /* Make each column full-width */
+            }
+        }
+        /* --- END OF RESPONSIVE CODE --- */
+
+        /* Styles for printing to PDF */
         @media print {
             body {
                 background-color: #fff;
@@ -155,7 +182,7 @@
                     <div class="item-header">
                         <div>
                             <span class="item-title">Co-Owner</span> | <span class="company-info">Captok | Full-time</span>
-                            <div class="company-url">https://captiontok.ai (No longer active)</div>
+                            <div class="company-url">https://captiontok.ai (No Longer active)</div>
                         </div>
                         <div class="item-location-date">
                             <div>Fully online</div>
