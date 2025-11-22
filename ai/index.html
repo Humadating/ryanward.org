@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ryanward AI</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
         
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f9fafb; /* Light gray background */
+            background-color: #f9fafb;
         }
 
         /* Custom Scrollbar */
@@ -48,13 +49,15 @@
             100% { opacity: 0.1; }
         }
 
-        /* Markdown styles simulation for simple text */
+        /* Markdown styles simulation */
         .prose p { margin-bottom: 0.75em; }
         .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 0.75em; }
         .prose ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 0.75em; }
         .prose strong { font-weight: 600; }
-        .prose code { background-color: #f3f4f6; padding: 0.2em 0.4em; border-radius: 0.25em; font-size: 0.9em; }
+        .prose code { background-color: #f3f4f6; padding: 0.2em 0.4em; border-radius: 0.25em; font-size: 0.9em; font-family: monospace; }
         .prose pre { background-color: #1f2937; color: white; padding: 1em; border-radius: 0.5em; overflow-x: auto; margin-bottom: 0.75em; }
+        .prose pre code { background-color: transparent; padding: 0; color: inherit; }
+        .prose a { color: #2563eb; text-decoration: underline; }
     </style>
 </head>
 <body class="h-screen flex flex-col md:flex-row overflow-hidden text-gray-900 bg-white">
@@ -69,7 +72,7 @@
     </div>
 
     <!-- Sidebar -->
-    <aside id="sidebar" class="transform -translate-x-full md:translate-x-0 transition-transform duration-300 fixed md:relative z-10 w-64 h-full bg-gray-50 border-r border-gray-200 flex flex-col">
+    <aside id="sidebar" class="transform -translate-x-full md:translate-x-0 transition-transform duration-300 fixed md:relative z-10 w-64 h-full bg-gray-50 border-r border-gray-200 flex flex-col shadow-lg md:shadow-none">
         <div class="p-4 border-b border-gray-200 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <h1 class="font-bold text-lg tracking-tight">Ryanward AI</h1>
@@ -81,7 +84,7 @@
 
         <!-- New Chat Button -->
         <div class="p-3">
-            <button id="new-chat-btn" class="w-full flex items-center justify-center space-x-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 py-2 px-4 rounded-lg transition-colors shadow-sm text-sm font-medium">
+            <button id="new-chat-btn" class="w-full flex items-center justify-center space-x-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 py-2 px-4 rounded-lg transition-colors shadow-sm text-sm font-medium cursor-pointer">
                 <i class="fas fa-plus"></i>
                 <span>New Chat</span>
             </button>
@@ -90,35 +93,61 @@
         <!-- Chat History List -->
         <div class="flex-1 overflow-y-auto px-3 py-2 space-y-1" id="chat-history-list">
             <!-- History items will be injected here -->
-            <div class="text-center mt-10 text-gray-400 text-sm hidden" id="guest-history-msg">
-                <p>Sign in to save chat history</p>
-            </div>
             <div class="text-center mt-10 text-gray-400 text-sm" id="empty-history-msg">
                 <p>No previous chats</p>
             </div>
         </div>
 
-        <!-- User / Settings -->
+        <!-- User & Settings Footer -->
         <div class="p-4 border-t border-gray-200 bg-gray-50">
-            <div id="user-logged-out" class="block">
-                <button id="google-signin-btn" class="w-full flex items-center justify-center space-x-2 bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition shadow-sm text-sm font-medium">
-                    <i class="fab fa-google text-red-500"></i>
-                    <span>Sign in with Google</span>
-                </button>
+            
+            <!-- Loading State -->
+            <div id="auth-loading" class="text-center text-xs text-gray-400 py-2 hidden">
+                Initializing...
             </div>
-            <div id="user-logged-in" class="hidden">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="flex items-center space-x-2">
-                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
-                            RW
+
+            <!-- Signed Out State -->
+            <div id="auth-signed-out" class="hidden">
+                <div id="g_id_onload"
+                     data-client_id=""
+                     data-context="signin"
+                     data-ux_mode="popup"
+                     data-callback="handleCredentialResponse"
+                     data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-size="large"
+                     data-logo_alignment="left"
+                     data-width="220">
+                </div>
+                <button id="open-settings-guest" class="mt-3 w-full flex items-center justify-center space-x-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 p-2 rounded-md transition-colors text-xs font-medium cursor-pointer">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings & API Key</span>
+                </button>
+                <p id="client-id-warning" class="text-[10px] text-red-500 mt-2 text-center hidden cursor-pointer hover:underline" onclick="openSettings()">
+                    Client ID missing in Settings
+                </p>
+            </div>
+
+            <!-- Signed In State -->
+            <div id="auth-signed-in" class="hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center space-x-2 overflow-hidden">
+                        <img id="user-avatar" src="" alt="" class="w-8 h-8 rounded-full bg-gray-300 object-cover border border-gray-200">
+                        <div class="flex flex-col min-w-0">
+                            <span id="user-name" class="text-sm font-semibold text-gray-800 truncate max-w-[100px]">User</span>
+                            <span class="text-[10px] text-green-600 font-medium">Online</span>
                         </div>
-                        <div class="text-sm font-medium text-gray-700">User</div>
                     </div>
-                    <button id="settings-btn" class="text-gray-400 hover:text-gray-600" title="Settings">
+                    <button id="open-settings-user" class="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-200 transition-colors cursor-pointer">
                         <i class="fas fa-cog"></i>
                     </button>
                 </div>
-                <button id="signout-btn" class="w-full text-left text-xs text-red-500 hover:text-red-600 hover:underline">
+                <button id="sign-out-btn" class="w-full text-left text-xs text-red-500 hover:text-red-600 hover:bg-red-50 p-1.5 rounded px-2 transition-colors cursor-pointer">
                     Sign out
                 </button>
             </div>
@@ -128,25 +157,32 @@
     <!-- Main Chat Area -->
     <main class="flex-1 flex flex-col h-full relative bg-white">
         <!-- Overlay for mobile sidebar -->
-        <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-0 hidden md:hidden"></div>
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden transition-opacity"></div>
 
         <!-- Chat Messages -->
         <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 scroll-smooth">
             <!-- Welcome Message -->
             <div class="flex flex-col items-center justify-center h-full text-center space-y-4" id="welcome-screen">
+                <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl mb-2 shadow-lg">
+                    <i class="fas fa-robot"></i>
+                </div>
                 <h2 class="text-2xl font-bold text-gray-900">Welcome to Ryanward AI</h2>
-                <p class="text-gray-500 max-w-md">A powerful AI assistant styled for simplicity. Enter your Gemini API key to get started.</p>
+                <p class="text-gray-500 max-w-md">A flexible AI assistant. Configure your API provider in settings.</p>
+                <div id="api-key-warning" class="hidden bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm p-3 rounded-lg max-w-md cursor-pointer" onclick="openSettings()">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    API Key is missing. <span class="underline font-medium">Set it here</span>.
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-lg mt-8">
-                    <button class="suggestion-btn p-3 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 hover:bg-gray-50 text-left transition">
+                    <button class="suggestion-btn p-3 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 hover:bg-gray-50 text-left transition cursor-pointer">
                         "Explain quantum computing in simple terms"
                     </button>
-                    <button class="suggestion-btn p-3 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 hover:bg-gray-50 text-left transition">
+                    <button class="suggestion-btn p-3 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 hover:bg-gray-50 text-left transition cursor-pointer">
                         "Write a python script to scrape a website"
                     </button>
-                    <button class="suggestion-btn p-3 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 hover:bg-gray-50 text-left transition">
+                    <button class="suggestion-btn p-3 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 hover:bg-gray-50 text-left transition cursor-pointer">
                         "Creative ideas for a 10 year old's birthday"
                     </button>
-                    <button class="suggestion-btn p-3 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 hover:bg-gray-50 text-left transition">
+                    <button class="suggestion-btn p-3 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 hover:bg-gray-50 text-left transition cursor-pointer">
                         "Draft a professional email to a client"
                     </button>
                 </div>
@@ -157,10 +193,10 @@
         <!-- Input Area -->
         <div class="p-4 bg-white border-t border-gray-100">
             <div class="max-w-3xl mx-auto relative">
-                <form id="chat-form" class="relative flex items-end shadow-sm rounded-2xl border border-gray-300 bg-white focus-within:ring-2 focus-within:ring-black/5 focus-within:border-gray-400 transition-all">
-                    <textarea id="user-input" rows="1" class="w-full py-3.5 pl-4 pr-12 bg-transparent border-none focus:ring-0 resize-none max-h-48 text-gray-800 placeholder-gray-400" placeholder="Ask anything..."></textarea>
-                    <button type="submit" id="send-btn" class="absolute right-2 bottom-2 p-2 text-gray-400 hover:text-black disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg">
-                        <i class="fas fa-arrow-up bg-gray-100 hover:bg-gray-200 w-8 h-8 flex items-center justify-center rounded-full transition-colors"></i>
+                <form id="chat-form" class="relative flex items-end shadow-sm rounded-2xl border border-gray-300 bg-white focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+                    <textarea id="user-input" rows="1" class="w-full py-3.5 pl-4 pr-12 bg-transparent border-none focus:ring-0 focus:outline-none resize-none max-h-48 text-gray-800 placeholder-gray-400" placeholder="Ask anything..."></textarea>
+                    <button type="submit" id="send-btn" class="absolute right-2 bottom-2 p-1 text-gray-400 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg cursor-pointer">
+                        <i class="fas fa-arrow-up bg-gray-100 hover:bg-blue-50 w-8 h-8 flex items-center justify-center rounded-full transition-colors"></i>
                     </button>
                 </form>
                 <div class="text-center mt-2">
@@ -170,59 +206,70 @@
         </div>
     </main>
 
-    <!-- API Key Modal -->
-    <div id="api-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 mx-4 transform transition-all">
-            <h3 class="text-lg font-bold text-gray-900 mb-2">Gemini API Key Required</h3>
-            <p class="text-sm text-gray-500 mb-4">To use Ryanward AI, you need to provide your Google Gemini API key. Your key is stored locally in your browser and never sent to our servers.</p>
-            
-            <div class="mb-4">
-                <label for="api-key-input" class="block text-sm font-medium text-gray-700 mb-1">API Key</label>
-                <input type="password" id="api-key-input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent" placeholder="AIzaSy..." />
-                <div class="mt-1 text-xs text-right">
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-600 hover:underline">Get a key here</a>
-                </div>
-            </div>
-            
-            <div class="flex justify-end space-x-3">
-                <button id="cancel-api-btn" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">Cancel</button>
-                <button id="save-api-btn" class="px-4 py-2 text-sm font-medium text-white bg-black rounded-lg hover:bg-gray-800 focus:outline-none shadow-md">Save Key</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Settings Modal (currently just for API key reset) -->
-    <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 mx-4">
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex justify-between items-center mb-6">
                 <h3 class="text-lg font-bold text-gray-900">Settings</h3>
-                <button id="close-settings" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+                <button id="close-settings" class="text-gray-400 hover:text-gray-600 cursor-pointer"><i class="fas fa-times"></i></button>
             </div>
             
-            <div class="space-y-4">
-                <div class="p-3 border border-gray-200 rounded-lg">
-                    <h4 class="text-sm font-medium text-gray-900 mb-1">API Configuration</h4>
-                    <p class="text-xs text-gray-500 mb-3">Manage your Gemini API connection.</p>
-                    <button id="reset-api-key" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-md transition">Change API Key</button>
+            <form id="settings-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Base URL</label>
+                    <input type="text" id="setting-base-url" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="https://api.openai.com/v1">
+                    <p class="text-xs text-gray-500 mt-1">API endpoint (e.g. OpenAI, OpenRouter, LocalAI).</p>
                 </div>
-                
-                <div class="p-3 border border-gray-200 rounded-lg">
-                    <h4 class="text-sm font-medium text-gray-900 mb-1">Appearance</h4>
-                    <p class="text-xs text-gray-500 mb-3">Currently set to White Theme (Default).</p>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">API Key</label>
+                    <input type="password" id="setting-api-key" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="sk-...">
+                    <p class="text-xs text-gray-500 mt-1">Your API key for the provider above.</p>
                 </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Model Name</label>
+                    <input type="text" id="setting-model" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="gpt-4o-mini">
+                    <p class="text-xs text-gray-500 mt-1">The model ID to use.</p>
+                </div>
+
+                <div class="border-t border-gray-100 pt-4 mt-4">
+                    <h4 class="text-sm font-bold text-gray-900 mb-3">Google Sign-In Config</h4>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Client ID</label>
+                    <input type="text" id="setting-google-id" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="YOUR_CLIENT_ID.apps.googleusercontent.com">
+                    <p class="text-xs text-gray-500 mt-1">Required for the Google Sign-In button to appear.</p>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-sm cursor-pointer">
+                        Save & Reload
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-6 pt-4 border-t border-gray-100 text-center">
+                <button id="clear-data-btn" class="text-xs text-red-500 hover:text-red-700 hover:underline cursor-pointer">
+                    Clear all chats & settings
+                </button>
+                <p class="text-xs text-gray-400 mt-2">Ryanward AI v2.0</p>
             </div>
         </div>
     </div>
 
     <script>
-        // State Management
+        // Configuration & State
+        const CONFIG = {
+            baseUrl: localStorage.getItem('rw_base_url') || 'https://api.openai.com/v1',
+            apiKey: localStorage.getItem('rw_api_key') || '',
+            model: localStorage.getItem('rw_model') || 'gpt-4o-mini',
+            googleClientId: localStorage.getItem('rw_google_client_id') || ''
+        };
+
         const state = {
-            isAuthenticated: false,
-            apiKey: localStorage.getItem('gemini_api_key') || '',
+            user: JSON.parse(localStorage.getItem('rw_user')) || null,
             chats: JSON.parse(localStorage.getItem('rw_chats')) || [],
             currentChatId: null,
-            isTyping: false,
-            guestHistory: [] // Temporary storage for guest chat context
+            isTyping: false
         };
 
         // DOM Elements
@@ -233,43 +280,97 @@
             closeSidebar: document.getElementById('close-sidebar'),
             newChatBtn: document.getElementById('new-chat-btn'),
             chatHistoryList: document.getElementById('chat-history-list'),
-            guestHistoryMsg: document.getElementById('guest-history-msg'),
             emptyHistoryMsg: document.getElementById('empty-history-msg'),
-            userLoggedOut: document.getElementById('user-logged-out'),
-            userLoggedIn: document.getElementById('user-logged-in'),
-            googleSigninBtn: document.getElementById('google-signin-btn'),
-            signoutBtn: document.getElementById('signout-btn'),
             chatContainer: document.getElementById('chat-container'),
             welcomeScreen: document.getElementById('welcome-screen'),
+            apiKeyWarning: document.getElementById('api-key-warning'),
             chatForm: document.getElementById('chat-form'),
             userInput: document.getElementById('user-input'),
             sendBtn: document.getElementById('send-btn'),
-            apiModal: document.getElementById('api-modal'),
-            apiKeyInput: document.getElementById('api-key-input'),
-            saveApiBtn: document.getElementById('save-api-btn'),
-            cancelApiBtn: document.getElementById('cancel-api-btn'),
-            settingsBtn: document.getElementById('settings-btn'),
+            
+            // Auth & Settings Elements
+            authSignedOut: document.getElementById('auth-signed-out'),
+            authSignedIn: document.getElementById('auth-signed-in'),
+            userAvatar: document.getElementById('user-avatar'),
+            userName: document.getElementById('user-name'),
+            signOutBtn: document.getElementById('sign-out-btn'),
+            openSettingsGuest: document.getElementById('open-settings-guest'),
+            openSettingsUser: document.getElementById('open-settings-user'),
+            gIdOnload: document.getElementById('g_id_onload'),
+            clientIdWarning: document.getElementById('client-id-warning'),
+
             settingsModal: document.getElementById('settings-modal'),
             closeSettings: document.getElementById('close-settings'),
-            resetApiKey: document.getElementById('reset-api-key'),
+            settingsForm: document.getElementById('settings-form'),
+            settingBaseUrl: document.getElementById('setting-base-url'),
+            settingApiKey: document.getElementById('setting-api-key'),
+            settingModel: document.getElementById('setting-model'),
+            settingGoogleId: document.getElementById('setting-google-id'),
+            clearDataBtn: document.getElementById('clear-data-btn'),
             suggestionBtns: document.querySelectorAll('.suggestion-btn')
         };
 
-        // Helper: Generate ID
-        const generateId = () => Math.random().toString(36).substr(2, 9);
-
         // Initialization
         function init() {
+            // Populate Settings Form
+            els.settingBaseUrl.value = CONFIG.baseUrl;
+            els.settingApiKey.value = CONFIG.apiKey;
+            els.settingModel.value = CONFIG.model;
+            els.settingGoogleId.value = CONFIG.googleClientId;
+
+            // Check Warnings
+            if (!CONFIG.apiKey) {
+                els.apiKeyWarning.classList.remove('hidden');
+            }
+
+            // Auth Setup
             checkAuth();
+            if (!state.user && CONFIG.googleClientId) {
+                // Set Client ID dynamically for GSI
+                els.gIdOnload.setAttribute('data-client_id', CONFIG.googleClientId);
+            } else if (!state.user && !CONFIG.googleClientId) {
+                els.clientIdWarning.classList.remove('hidden');
+            }
+
             renderHistory();
             adjustTextareaHeight();
-            
-            // If no API key, prompt for it (unless just browsing)
-            // We'll check when they try to send a message if no key is present,
-            // OR we can show it on load. Let's show it on load if missing.
-            if (!state.apiKey) {
-                // Don't force it immediately, wait for interaction or allow them to look around?
-                // Standard UX: prompt when trying to chat.
+        }
+
+        // Google Sign-In Callback (must be global)
+        window.handleCredentialResponse = function(response) {
+            try {
+                const responsePayload = decodeJwtResponse(response.credential);
+                state.user = {
+                    name: responsePayload.name,
+                    email: responsePayload.email,
+                    picture: responsePayload.picture
+                };
+                localStorage.setItem('rw_user', JSON.stringify(state.user));
+                checkAuth();
+            } catch (e) {
+                console.error("Auth Error", e);
+                alert("Failed to sign in");
+            }
+        };
+
+        function decodeJwtResponse(token) {
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
+        function checkAuth() {
+            if (state.user) {
+                els.authSignedOut.classList.add('hidden');
+                els.authSignedIn.classList.remove('hidden');
+                els.userName.textContent = state.user.name;
+                els.userAvatar.src = state.user.picture;
+            } else {
+                els.authSignedIn.classList.add('hidden');
+                els.authSignedOut.classList.remove('hidden');
             }
         }
 
@@ -278,33 +379,13 @@
         els.closeSidebar.addEventListener('click', toggleSidebar);
         els.sidebarOverlay.addEventListener('click', toggleSidebar);
         
-        els.googleSigninBtn.addEventListener('click', () => {
-            // Simulate Google Sign In
-            state.isAuthenticated = true;
-            localStorage.setItem('rw_auth', 'true');
-            
-            // Reset state to avoid mixing guest context with user context
-            state.currentChatId = null;
-            state.guestHistory = [];
-            resetChatUI();
-            
-            checkAuth();
-            renderHistory();
-        });
-
-        els.signoutBtn.addEventListener('click', () => {
-            state.isAuthenticated = false;
-            localStorage.removeItem('rw_auth');
-            state.currentChatId = null;
-            resetChatUI();
-            checkAuth();
-            renderHistory();
-        });
-
         els.newChatBtn.addEventListener('click', () => {
             state.currentChatId = null;
             resetChatUI();
-            if (window.innerWidth < 768) toggleSidebar();
+            if (window.innerWidth < 768) {
+                const isClosed = els.sidebar.classList.contains('-translate-x-full');
+                if (!isClosed) toggleSidebar();
+            }
         });
 
         els.userInput.addEventListener('input', adjustTextareaHeight);
@@ -320,33 +401,43 @@
             handleSend();
         });
 
-        els.saveApiBtn.addEventListener('click', () => {
-            const key = els.apiKeyInput.value.trim();
-            if (key) {
-                state.apiKey = key;
-                localStorage.setItem('gemini_api_key', key);
-                els.apiModal.classList.add('hidden');
-                // If user was trying to send a message, maybe retry?
-                // For now, just close modal.
-            }
+        // Auth Events
+        els.signOutBtn.addEventListener('click', () => {
+            state.user = null;
+            localStorage.removeItem('rw_user');
+            // Google often persists session in cookies, so we might need to reload or use google.accounts.id.disableAutoSelect()
+            window.location.reload();
         });
 
-        els.cancelApiBtn.addEventListener('click', () => {
-            els.apiModal.classList.add('hidden');
-        });
-
-        els.settingsBtn.addEventListener('click', () => {
-            els.settingsModal.classList.remove('hidden');
-        });
-
+        // Settings Modal Handlers
+        window.openSettings = () => els.settingsModal.classList.remove('hidden');
+        if(els.openSettingsGuest) els.openSettingsGuest.addEventListener('click', window.openSettings);
+        if(els.openSettingsUser) els.openSettingsUser.addEventListener('click', window.openSettings);
+        
         els.closeSettings.addEventListener('click', () => {
             els.settingsModal.classList.add('hidden');
         });
 
-        els.resetApiKey.addEventListener('click', () => {
-            els.settingsModal.classList.add('hidden');
-            els.apiKeyInput.value = state.apiKey;
-            els.apiModal.classList.remove('hidden');
+        els.settingsModal.addEventListener('click', (e) => {
+            if (e.target === els.settingsModal) {
+                els.settingsModal.classList.add('hidden');
+            }
+        });
+
+        els.settingsForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            localStorage.setItem('rw_base_url', els.settingBaseUrl.value.trim().replace(/\/$/, ""));
+            localStorage.setItem('rw_api_key', els.settingApiKey.value.trim());
+            localStorage.setItem('rw_model', els.settingModel.value.trim());
+            localStorage.setItem('rw_google_client_id', els.settingGoogleId.value.trim());
+            window.location.reload();
+        });
+
+        els.clearDataBtn.addEventListener('click', () => {
+            if(confirm('Are you sure you want to clear all chats, settings, and logout?')) {
+                localStorage.clear();
+                window.location.reload();
+            }
         });
 
         els.suggestionBtns.forEach(btn => {
@@ -357,22 +448,7 @@
             });
         });
 
-        // Functions
-        function checkAuth() {
-            const storedAuth = localStorage.getItem('rw_auth');
-            state.isAuthenticated = storedAuth === 'true';
-            
-            if (state.isAuthenticated) {
-                els.userLoggedOut.classList.add('hidden');
-                els.userLoggedIn.classList.remove('hidden');
-                els.guestHistoryMsg.classList.add('hidden');
-            } else {
-                els.userLoggedOut.classList.remove('hidden');
-                els.userLoggedIn.classList.add('hidden');
-                els.guestHistoryMsg.classList.remove('hidden');
-            }
-        }
-
+        // UI Logic
         function toggleSidebar() {
             const isClosed = els.sidebar.classList.contains('-translate-x-full');
             if (isClosed) {
@@ -400,18 +476,10 @@
             // Clear list
             const children = Array.from(els.chatHistoryList.children);
             children.forEach(child => {
-                if (child.id !== 'guest-history-msg' && child.id !== 'empty-history-msg') {
+                if (child.id !== 'empty-history-msg') {
                     child.remove();
                 }
             });
-
-            if (!state.isAuthenticated) {
-                els.emptyHistoryMsg.classList.add('hidden');
-                els.guestHistoryMsg.classList.remove('hidden');
-                return;
-            } else {
-                els.guestHistoryMsg.classList.add('hidden');
-            }
 
             if (state.chats.length === 0) {
                 els.emptyHistoryMsg.classList.remove('hidden');
@@ -426,11 +494,13 @@
                     titleSpan.textContent = chat.title || 'New Chat';
                     
                     const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity';
+                    deleteBtn.className = 'text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1';
                     deleteBtn.innerHTML = '<i class="fas fa-trash-alt text-xs"></i>';
                     deleteBtn.onclick = (e) => {
                         e.stopPropagation();
-                        deleteChat(chat.id);
+                        if(confirm('Delete this chat?')) {
+                            deleteChat(chat.id);
+                        }
                     };
 
                     div.appendChild(titleSpan);
@@ -463,9 +533,16 @@
                 appendMessage(msg.role, msg.content, false);
             });
 
-            if (window.innerWidth < 768) toggleSidebar();
+            if (window.innerWidth < 768) {
+                 // Close sidebar if open on mobile
+                 const isClosed = els.sidebar.classList.contains('-translate-x-full');
+                 if (!isClosed) toggleSidebar();
+            }
             renderHistory(); // update active state styling
         }
+
+        // Chat Logic
+        const generateId = () => Math.random().toString(36).substr(2, 9);
 
         function createChat(firstMessage) {
             const id = generateId();
@@ -476,33 +553,22 @@
                 messages: []
             };
             
-            if (state.isAuthenticated) {
-                state.chats.unshift(newChat);
-                localStorage.setItem('rw_chats', JSON.stringify(state.chats));
-            } else {
-                // Reset guest history for a "new chat"
-                state.guestHistory = [];
-            }
+            state.chats.unshift(newChat);
+            localStorage.setItem('rw_chats', JSON.stringify(state.chats));
             
             state.currentChatId = id;
             renderHistory();
-            return newChat;
         }
 
         function updateChatHistory(role, content) {
             if (!state.currentChatId) return;
 
-            if (state.isAuthenticated) {
-                const chatIndex = state.chats.findIndex(c => c.id === state.currentChatId);
-                if (chatIndex > -1) {
-                    state.chats[chatIndex].messages.push({ role, content });
-                    state.chats[chatIndex].timestamp = Date.now();
-                    localStorage.setItem('rw_chats', JSON.stringify(state.chats));
-                    renderHistory();
-                }
-            } else {
-                // Guest mode: save to memory only
-                state.guestHistory.push({ role, content });
+            const chatIndex = state.chats.findIndex(c => c.id === state.currentChatId);
+            if (chatIndex > -1) {
+                state.chats[chatIndex].messages.push({ role, content });
+                state.chats[chatIndex].timestamp = Date.now();
+                localStorage.setItem('rw_chats', JSON.stringify(state.chats));
+                renderHistory();
             }
         }
 
@@ -513,25 +579,25 @@
             msgDiv.className = `flex w-full ${role === 'user' ? 'justify-end' : 'justify-start'}`;
             
             const bubble = document.createElement('div');
-            bubble.className = `max-w-[85%] md:max-w-[75%] rounded-2xl px-5 py-3.5 text-sm leading-relaxed shadow-sm ${
+            bubble.className = `max-w-[90%] md:max-w-[80%] rounded-2xl px-5 py-3.5 text-sm leading-relaxed shadow-sm ${
                 role === 'user' 
                 ? 'bg-gray-100 text-gray-900 rounded-br-none' 
                 : 'bg-white border border-gray-100 text-gray-800 rounded-bl-none'
             }`;
             
-            if (role === 'model') {
-                // Simple markdown parsing
+            if (role === 'assistant') {
                 bubble.innerHTML = parseMarkdown(text);
+            } else if (role === 'user') {
+                bubble.textContent = text;
             } else {
+                // System or other messages (shouldn't happen in UI usually)
                 bubble.textContent = text;
             }
 
             msgDiv.appendChild(bubble);
             els.chatContainer.appendChild(msgDiv);
             
-            // Auto scroll
             els.chatContainer.scrollTop = els.chatContainer.scrollHeight;
-
             return bubble;
         }
 
@@ -556,30 +622,42 @@
         }
 
         function parseMarkdown(text) {
-            // Very basic markdown parser for safety
+            // Safety: sanitize basic characters to prevent injection
             let html = text
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                // Bold
-                .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                // Italic
-                .replace(/\*(.*?)\*/g, "<em>$1</em>")
-                // Code blocks
-                .replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>")
-                // Inline code
-                .replace(/`(.*?)`/g, "<code>$1</code>")
-                // Lists
-                .replace(/^\s*-\s(.*?)$/gm, "<li>$1</li>")
-                // Newlines to <br> (except in pre)
-                .replace(/\n/g, "<br>");
+                .replace(/>/g, "&gt;");
+
+            // Code Blocks with simple styling
+            html = html.replace(/```(\w+)?([\s\S]*?)```/g, (match, lang, code) => {
+                return `<pre><code>${code.trim()}</code></pre>`;
+            });
+
+            // Inline Code
+            html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+
+            // Bold
+            html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
             
-            // Wrap lists
-            // This simple regex replacer isn't perfect for nested lists but works for basic AI responses
-            if (html.includes("<li>")) {
-                html = html.replace(/(<li>.*<\/li>)/s, "<ul>$1</ul>");
-                // Cleanup multiple ULs if regex matches individually (hacky but functional for demo)
+            // Italic
+            html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+
+            // Bullet Lists (Simple simulation)
+            html = html.replace(/^\s*-\s+(.+)$/gm, "<li>$1</li>");
+            
+            // Numbered Lists
+            html = html.replace(/^\s*\d+\.\s+(.+)$/gm, "<li>$1</li>");
+            
+            // Wrap lists (Greedy match, not perfect but works for basic blocks)
+            if(html.includes('<li>')) {
+                 html = html.replace(/((<li>.*<\/li>\s*)+)/g, "<ul>$1</ul>");
             }
+
+            // Links
+            html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+            // Newlines to breaks
+            html = html.replace(/\n/g, "<br>");
 
             return `<div class="prose">${html}</div>`;
         }
@@ -587,106 +665,92 @@
         async function handleSend() {
             const text = els.userInput.value.trim();
             if (!text || state.isTyping) return;
-            
-            if (!state.apiKey) {
-                els.apiModal.classList.remove('hidden');
-                els.apiKeyInput.focus();
+
+            // Configuration Check
+            if (!CONFIG.apiKey) {
+                appendMessage('assistant', "⚠️ Please configure your API Key in Settings.");
+                window.openSettings();
                 return;
             }
 
-            // Clear Input
             els.userInput.value = '';
             adjustTextareaHeight();
 
-            // Setup Chat ID if new
             if (!state.currentChatId) {
                 createChat(text);
-            } else {
-                // If guest and existing one-off chat, ensure we don't wipe it
-                // actually createChat is called only if no currentChatId.
-                // If guest has a currentChatId (in memory), we continue using it.
-            }
+            } 
 
-            // User Message
             appendMessage('user', text);
             updateChatHistory('user', text);
 
-            // AI Response
             state.isTyping = true;
             showTyping();
 
             try {
-                const response = await fetchGemini(text);
+                const response = await fetchAIResponse(text);
                 removeTyping();
-                appendMessage('model', response);
-                updateChatHistory('model', response);
+                appendMessage('assistant', response);
+                updateChatHistory('assistant', response);
             } catch (error) {
                 removeTyping();
-                appendMessage('model', "Error: " + error.message);
+                appendMessage('assistant', "Error: " + error.message);
             } finally {
                 state.isTyping = false;
             }
         }
 
-        async function fetchGemini(prompt) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.apiKey}`;
-            
+        async function fetchAIResponse(prompt) {
+            // Standard OpenAI Chat Completion Endpoint format
+            // Works for OpenAI, OpenRouter, Groq, etc.
+            let url = CONFIG.baseUrl;
+            if (!url.endsWith('/chat/completions')) {
+                // Auto-append if the user just entered the base API URL
+                url = url.replace(/\/+$/, "") + '/chat/completions';
+            }
+
             let messagesToContext = [];
-
-            if (state.isAuthenticated) {
-                const chat = state.chats.find(c => c.id === state.currentChatId);
-                if (chat) {
-                    messagesToContext = chat.messages;
-                }
-            } else {
-                messagesToContext = state.guestHistory;
+            const chat = state.chats.find(c => c.id === state.currentChatId);
+            if (chat) {
+                messagesToContext = chat.messages;
             }
 
-            // Safety fallback if something went wrong and the latest prompt isn't in history yet
-            // (though handleSend calls updateChatHistory first, so it should be there)
-            if (messagesToContext.length === 0 || messagesToContext[messagesToContext.length - 1].content !== prompt) {
-                // This handles the case where updateChatHistory might have failed or we just want to be sure
-                // But since we added it, let's trust the array. 
-                // Actually, if it's a brand new chat, updateChatHistory might have just run.
-            }
-
-            // Map to Gemini API format
-            // Limit context to last 20 messages to avoid excessive token usage in this demo
-            const recentMessages = messagesToContext.slice(-20);
-            
-            const contents = recentMessages.map(msg => ({
-                role: msg.role,
-                parts: [{ text: msg.content }]
+            // Prepare history for context (limit to last 10 pairs to save tokens)
+            const recentMessages = messagesToContext.slice(-20).map(msg => ({
+                role: msg.role === 'model' ? 'assistant' : msg.role, // Handle migration from Gemini 'model' role
+                content: msg.content
             }));
 
-            // If for some reason contents is empty (shouldn't be), add the prompt manually
-            if (contents.length === 0) {
-                contents.push({
-                    role: "user",
-                    parts: [{ text: prompt }]
-                });
-            }
+            // Ensure the latest user message is in the context (it's already added to state in handleSend)
+            // Note: The OpenAI API doesn't need 'prompt' passed separately if it's in the messages array.
+            // Since we added it to chat history just before calling this, it IS in recentMessages.
+
+            const payload = {
+                model: CONFIG.model,
+                messages: recentMessages,
+                temperature: 0.7
+            };
 
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${CONFIG.apiKey}`
                 },
-                body: JSON.stringify({
-                    contents: contents
-                })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error?.message || 'Failed to fetch response');
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error?.message || `API Error ${response.status}`);
             }
 
             const data = await response.json();
-            if (!data.candidates || data.candidates.length === 0) {
+            
+            if (!data.choices || data.choices.length === 0) {
                 return "No response generated.";
             }
-            return data.candidates[0].content.parts[0].text;
+            
+            return data.choices[0].message.content;
         }
 
         // Run
