@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ryanward AI</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -60,7 +60,7 @@
         .prose a { color: #2563eb; text-decoration: underline; }
     </style>
 </head>
-<body class="h-screen flex flex-col md:flex-row overflow-hidden text-gray-900 bg-white">
+<body class="h-[100dvh] flex flex-col md:flex-row overflow-hidden text-gray-900 bg-white">
 
     <!-- Mobile Header -->
     <div class="md:hidden flex items-center justify-between p-4 border-b border-gray-200 bg-white z-20">
@@ -73,13 +73,20 @@
 
     <!-- Sidebar -->
     <aside id="sidebar" class="transform -translate-x-full md:translate-x-0 transition-transform duration-300 fixed md:relative z-10 w-64 h-full bg-gray-50 border-r border-gray-200 flex flex-col shadow-lg md:shadow-none">
-        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-                <h1 class="font-bold text-lg tracking-tight">Ryanward AI</h1>
+        <!-- Sidebar Header with Back Link -->
+        <div class="p-4 border-b border-gray-200 flex flex-col bg-white">
+            <a href="https://ryanward.org" class="inline-flex items-center text-xs font-medium text-gray-500 hover:text-blue-600 transition-colors mb-3 w-fit group">
+                <i class="fas fa-arrow-left mr-1.5 transform group-hover:-translate-x-0.5 transition-transform"></i> 
+                Go back to main page
+            </a>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <h1 class="font-bold text-lg tracking-tight">Ryanward AI</h1>
+                </div>
+                <button id="close-sidebar" class="md:hidden text-gray-400 hover:text-gray-600 cursor-pointer">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-            <button id="close-sidebar" class="md:hidden text-gray-400 hover:text-gray-600">
-                <i class="fas fa-times"></i>
-            </button>
         </div>
 
         <!-- New Chat Button -->
@@ -128,8 +135,8 @@
                     <i class="fas fa-cog"></i>
                     <span>Settings & API Key</span>
                 </button>
-                <p id="client-id-warning" class="text-[10px] text-red-500 mt-2 text-center hidden cursor-pointer hover:underline" onclick="openSettings()">
-                    Client ID missing in Settings
+                <p id="client-id-warning" class="text-[10px] text-red-500 mt-2 text-center hidden">
+                    Client ID missing
                 </p>
             </div>
 
@@ -194,7 +201,7 @@
         <div class="p-4 bg-white border-t border-gray-100">
             <div class="max-w-3xl mx-auto relative">
                 <form id="chat-form" class="relative flex items-end shadow-sm rounded-2xl border border-gray-300 bg-white focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
-                    <textarea id="user-input" rows="1" class="w-full py-3.5 pl-4 pr-12 bg-transparent border-none focus:ring-0 focus:outline-none resize-none max-h-48 text-gray-800 placeholder-gray-400" placeholder="Ask anything..."></textarea>
+                    <textarea id="user-input" rows="1" class="w-full py-3.5 pl-4 pr-12 bg-transparent border-none focus:ring-0 focus:outline-none resize-none max-h-48 text-base text-gray-800 placeholder-gray-400" placeholder="Ask anything..."></textarea>
                     <button type="submit" id="send-btn" class="absolute right-2 bottom-2 p-1 text-gray-400 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg cursor-pointer">
                         <i class="fas fa-arrow-up bg-gray-100 hover:bg-blue-50 w-8 h-8 flex items-center justify-center rounded-full transition-colors"></i>
                     </button>
@@ -233,13 +240,6 @@
                     <p class="text-xs text-gray-500 mt-1">The model ID to use.</p>
                 </div>
 
-                <div class="border-t border-gray-100 pt-4 mt-4">
-                    <h4 class="text-sm font-bold text-gray-900 mb-3">Google Sign-In Config</h4>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Client ID</label>
-                    <input type="text" id="setting-google-id" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="YOUR_CLIENT_ID.apps.googleusercontent.com">
-                    <p class="text-xs text-gray-500 mt-1">Required for the Google Sign-In button to appear.</p>
-                </div>
-
                 <div class="pt-2">
                     <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-sm cursor-pointer">
                         Save & Reload
@@ -251,7 +251,7 @@
                 <button id="clear-data-btn" class="text-xs text-red-500 hover:text-red-700 hover:underline cursor-pointer">
                     Clear all chats & settings
                 </button>
-                <p class="text-xs text-gray-400 mt-2">Ryanward AI v2.0</p>
+                <p class="text-xs text-gray-400 mt-2">Ryanward AI v2.2</p>
             </div>
         </div>
     </div>
@@ -262,7 +262,7 @@
             baseUrl: localStorage.getItem('rw_base_url') || 'https://api.openai.com/v1',
             apiKey: localStorage.getItem('rw_api_key') || '',
             model: localStorage.getItem('rw_model') || 'gpt-4o-mini',
-            googleClientId: localStorage.getItem('rw_google_client_id') || '760335422990-p5al7d0gldtacljsas5qlup434ubugok.apps.googleusercontent.com'
+            googleClientId: '760335422990-p5al7d0gldtacljsas5qlup434ubugok.apps.googleusercontent.com'
         };
 
         const state = {
@@ -305,7 +305,6 @@
             settingBaseUrl: document.getElementById('setting-base-url'),
             settingApiKey: document.getElementById('setting-api-key'),
             settingModel: document.getElementById('setting-model'),
-            settingGoogleId: document.getElementById('setting-google-id'),
             clearDataBtn: document.getElementById('clear-data-btn'),
             suggestionBtns: document.querySelectorAll('.suggestion-btn')
         };
@@ -316,7 +315,6 @@
             els.settingBaseUrl.value = CONFIG.baseUrl;
             els.settingApiKey.value = CONFIG.apiKey;
             els.settingModel.value = CONFIG.model;
-            els.settingGoogleId.value = CONFIG.googleClientId;
 
             // Check Warnings
             if (!CONFIG.apiKey) {
@@ -329,6 +327,7 @@
                 // Set Client ID dynamically for GSI
                 els.gIdOnload.setAttribute('data-client_id', CONFIG.googleClientId);
             } else if (!state.user && !CONFIG.googleClientId) {
+                // Should not happen with hardcoded ID, but just in case
                 els.clientIdWarning.classList.remove('hidden');
             }
 
@@ -429,7 +428,6 @@
             localStorage.setItem('rw_base_url', els.settingBaseUrl.value.trim().replace(/\/$/, ""));
             localStorage.setItem('rw_api_key', els.settingApiKey.value.trim());
             localStorage.setItem('rw_model', els.settingModel.value.trim());
-            localStorage.setItem('rw_google_client_id', els.settingGoogleId.value.trim());
             window.location.reload();
         });
 
