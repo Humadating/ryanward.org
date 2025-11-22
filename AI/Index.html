@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ryanward AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb; /* Light gray background */
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d1d5db;
+        }
+
+        .typing-indicator span {
+            animation: blink 1.4s infinite both;
+            height: 6px;
+            width: 6px;
+            background-color: #6b7280;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 1px;
+        }
+        
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes blink {
+            0% { opacity: 0.1; }
+            20% { opacity: 1; }
+            100% { opacity: 0.1; }
+        }
+
+        /* Markdown styles simulation for simple text */
+        .prose p { margin-bottom: 0.75em; }
+        .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 0.75em; }
+        .prose ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 0.75em; }
+        .prose strong { font-weight: 600; }
+        .prose code { background-color: #f3f4f6; padding: 0.2em 0.4em; border-radius: 0.25em; font-size: 0.9em; }
+        .prose pre { background-color: #1f2937; color: white; padding: 1em; border-radius: 0.5em; overflow-x: auto; margin-bottom: 0.75em; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden text-gray-900 bg-white">
+
+    <!-- Mobile Header -->
+    <div class="md:hidden flex items-center justify-between p-4 border-b border-gray-200 bg-white z-20">
+        <button id="mobile-menu-btn" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+        <h1 class="text-lg font-bold tracking-tight">Ryanward AI</h1>
+        <div class="w-6"></div> <!-- Spacer -->
+    </div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="transform -translate-x-full md:translate-x-0 transition-transform duration-300 fixed md:relative z-10 w-64 h-full bg-gray-50 border-r border-gray-200 flex flex-col">
+        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <h1 class="font-bold text-lg tracking-tight">Ryanward AI</h1>
+            </div>
+            <button id="close-sidebar" class="md:hidden text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- New Chat Button -->
+        <div class="p-3">
+            <button id="new-chat-btn" class="w-full flex items-center justify-center space-x-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 py-2 px-4 rounded-lg transition-colors shadow-sm text-sm font-medium">
+                <i class="fas fa-plus"></i>
+                <span>New Chat</span>
+            </button>
+        </div>
+
+        <!-- Chat History List -->
+        <div class="flex-1 overflow-y-auto px-3 py-2 space-y-1" id="chat-history-list">
+            <!-- History items will be injected here -->
+            <div class="text-center mt-10 text-gray-400 text-sm hidden" id="guest-history-msg">
+                <p>Sign in to save chat history</p>
+            </div>
+            <div class="text-center mt-10 text-gray-400 text-sm" id="empty-history-msg">
+                <p>No previous chats</p>
+            </div>
+        </div>
+
+        <!-- User / Settings -->
+        <div class="p-4 border-t border-gray-200 bg-gray-50">
+            <div id="user-logged-out" class="block">
+                <button id="google-signin-btn" class="w-full flex items-center justify-center space-x-2 bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition shadow-sm text-sm font-medium">
+                    <i class="fab fa-google text-red-500"></i>
+                    <span>Sign in with Google</span>
+                </button>
+            </div>
+            <div id="user-logged-in" class="hidden">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                            RW
+                        </div>
+                        <div class="text-sm font-medium text-gray-700">User</div>
+                    </div>
+                    <button id="settings-btn" class="text-gray-400 hover:text-gray-600" title="Settings">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+                <button id="signout-btn" class="w-full text-left text-xs text-red-500 hover:text-red-600 hover:underline">
+                    Sign out
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="flex-1 flex flex-col h-full relative bg-white">
+        <!-- Overlay for mobile sidebar -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-0 hidden md:hidden"></div>
+
+        <!-- Chat Messages -->
+        <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 scroll-smooth">
+            <!-- Welcome Message -->
+            <div class="flex flex-col items-center justify-center h-full text-center space-y-4" id="welcome-screen">
+                <h2 class="text-2xl font-bold text-gray-900">Welcome to Ryanward AI</h2>
+                <p class="text-gray-500 max-w-md">A powerful AI assistant styled for simplicity. Enter your Gemini API key to get started.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-lg mt-8">
+                    <button class="suggestion-btn p-3 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 hover:bg-gray-50 text-left transition">
+                        "Explain quantum computing in simple terms"
+                    </button>
+                    <button class="suggestion-btn p-3 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 hover:bg-gray-50 text-left transition">
+                        "Write a python script to scrape a website"
+                    </button>
+                    <button class="suggestion-btn p-3 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 hover:bg-gray-50 text-left transition">
+                        "Creative ideas for a 10 year old's birthday"
+                    </button>
+                    <button class="suggestion-btn p-3 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-400 hover:bg-gray-50 text-left transition">
+                        "Draft a professional email to a client"
+                    </button>
+                </div>
+            </div>
+            <!-- Messages will be appended here -->
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 bg-white border-t border-gray-100">
+            <div class="max-w-3xl mx-auto relative">
+                <form id="chat-form" class="relative flex items-end shadow-sm rounded-2xl border border-gray-300 bg-white focus-within:ring-2 focus-within:ring-black/5 focus-within:border-gray-400 transition-all">
+                    <textarea id="user-input" rows="1" class="w-full py-3.5 pl-4 pr-12 bg-transparent border-none focus:ring-0 resize-none max-h-48 text-gray-800 placeholder-gray-400" placeholder="Ask anything..."></textarea>
+                    <button type="submit" id="send-btn" class="absolute right-2 bottom-2 p-2 text-gray-400 hover:text-black disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg">
+                        <i class="fas fa-arrow-up bg-gray-100 hover:bg-gray-200 w-8 h-8 flex items-center justify-center rounded-full transition-colors"></i>
+                    </button>
+                </form>
+                <div class="text-center mt-2">
+                    <p class="text-xs text-gray-400">Ryanward AI can make mistakes. Check important info.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- API Key Modal -->
+    <div id="api-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 mx-4 transform transition-all">
+            <h3 class="text-lg font-bold text-gray-900 mb-2">Gemini API Key Required</h3>
+            <p class="text-sm text-gray-500 mb-4">To use Ryanward AI, you need to provide your Google Gemini API key. Your key is stored locally in your browser and never sent to our servers.</p>
+            
+            <div class="mb-4">
+                <label for="api-key-input" class="block text-sm font-medium text-gray-700 mb-1">API Key</label>
+                <input type="password" id="api-key-input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent" placeholder="AIzaSy..." />
+                <div class="mt-1 text-xs text-right">
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-600 hover:underline">Get a key here</a>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button id="cancel-api-btn" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">Cancel</button>
+                <button id="save-api-btn" class="px-4 py-2 text-sm font-medium text-white bg-black rounded-lg hover:bg-gray-800 focus:outline-none shadow-md">Save Key</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal (currently just for API key reset) -->
+    <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Settings</h3>
+                <button id="close-settings" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="p-3 border border-gray-200 rounded-lg">
+                    <h4 class="text-sm font-medium text-gray-900 mb-1">API Configuration</h4>
+                    <p class="text-xs text-gray-500 mb-3">Manage your Gemini API connection.</p>
+                    <button id="reset-api-key" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-md transition">Change API Key</button>
+                </div>
+                
+                <div class="p-3 border border-gray-200 rounded-lg">
+                    <h4 class="text-sm font-medium text-gray-900 mb-1">Appearance</h4>
+                    <p class="text-xs text-gray-500 mb-3">Currently set to White Theme (Default).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State Management
+        const state = {
+            isAuthenticated: false,
+            apiKey: localStorage.getItem('gemini_api_key') || '',
+            chats: JSON.parse(localStorage.getItem('rw_chats')) || [],
+            currentChatId: null,
+            isTyping: false,
+            guestHistory: [] // Temporary storage for guest chat context
+        };
+
+        // DOM Elements
+        const els = {
+            mobileMenuBtn: document.getElementById('mobile-menu-btn'),
+            sidebar: document.getElementById('sidebar'),
+            sidebarOverlay: document.getElementById('sidebar-overlay'),
+            closeSidebar: document.getElementById('close-sidebar'),
+            newChatBtn: document.getElementById('new-chat-btn'),
+            chatHistoryList: document.getElementById('chat-history-list'),
+            guestHistoryMsg: document.getElementById('guest-history-msg'),
+            emptyHistoryMsg: document.getElementById('empty-history-msg'),
+            userLoggedOut: document.getElementById('user-logged-out'),
+            userLoggedIn: document.getElementById('user-logged-in'),
+            googleSigninBtn: document.getElementById('google-signin-btn'),
+            signoutBtn: document.getElementById('signout-btn'),
+            chatContainer: document.getElementById('chat-container'),
+            welcomeScreen: document.getElementById('welcome-screen'),
+            chatForm: document.getElementById('chat-form'),
+            userInput: document.getElementById('user-input'),
+            sendBtn: document.getElementById('send-btn'),
+            apiModal: document.getElementById('api-modal'),
+            apiKeyInput: document.getElementById('api-key-input'),
+            saveApiBtn: document.getElementById('save-api-btn'),
+            cancelApiBtn: document.getElementById('cancel-api-btn'),
+            settingsBtn: document.getElementById('settings-btn'),
+            settingsModal: document.getElementById('settings-modal'),
+            closeSettings: document.getElementById('close-settings'),
+            resetApiKey: document.getElementById('reset-api-key'),
+            suggestionBtns: document.querySelectorAll('.suggestion-btn')
+        };
+
+        // Helper: Generate ID
+        const generateId = () => Math.random().toString(36).substr(2, 9);
+
+        // Initialization
+        function init() {
+            checkAuth();
+            renderHistory();
+            adjustTextareaHeight();
+            
+            // If no API key, prompt for it (unless just browsing)
+            // We'll check when they try to send a message if no key is present,
+            // OR we can show it on load. Let's show it on load if missing.
+            if (!state.apiKey) {
+                // Don't force it immediately, wait for interaction or allow them to look around?
+                // Standard UX: prompt when trying to chat.
+            }
+        }
+
+        // Event Listeners
+        els.mobileMenuBtn.addEventListener('click', toggleSidebar);
+        els.closeSidebar.addEventListener('click', toggleSidebar);
+        els.sidebarOverlay.addEventListener('click', toggleSidebar);
+        
+        els.googleSigninBtn.addEventListener('click', () => {
+            // Simulate Google Sign In
+            state.isAuthenticated = true;
+            localStorage.setItem('rw_auth', 'true');
+            
+            // Reset state to avoid mixing guest context with user context
+            state.currentChatId = null;
+            state.guestHistory = [];
+            resetChatUI();
+            
+            checkAuth();
+            renderHistory();
+        });
+
+        els.signoutBtn.addEventListener('click', () => {
+            state.isAuthenticated = false;
+            localStorage.removeItem('rw_auth');
+            state.currentChatId = null;
+            resetChatUI();
+            checkAuth();
+            renderHistory();
+        });
+
+        els.newChatBtn.addEventListener('click', () => {
+            state.currentChatId = null;
+            resetChatUI();
+            if (window.innerWidth < 768) toggleSidebar();
+        });
+
+        els.userInput.addEventListener('input', adjustTextareaHeight);
+        els.userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+        });
+
+        els.chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleSend();
+        });
+
+        els.saveApiBtn.addEventListener('click', () => {
+            const key = els.apiKeyInput.value.trim();
+            if (key) {
+                state.apiKey = key;
+                localStorage.setItem('gemini_api_key', key);
+                els.apiModal.classList.add('hidden');
+                // If user was trying to send a message, maybe retry?
+                // For now, just close modal.
+            }
+        });
+
+        els.cancelApiBtn.addEventListener('click', () => {
+            els.apiModal.classList.add('hidden');
+        });
+
+        els.settingsBtn.addEventListener('click', () => {
+            els.settingsModal.classList.remove('hidden');
+        });
+
+        els.closeSettings.addEventListener('click', () => {
+            els.settingsModal.classList.add('hidden');
+        });
+
+        els.resetApiKey.addEventListener('click', () => {
+            els.settingsModal.classList.add('hidden');
+            els.apiKeyInput.value = state.apiKey;
+            els.apiModal.classList.remove('hidden');
+        });
+
+        els.suggestionBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                els.userInput.value = btn.textContent.replace(/"/g, '').trim();
+                adjustTextareaHeight();
+                handleSend();
+            });
+        });
+
+        // Functions
+        function checkAuth() {
+            const storedAuth = localStorage.getItem('rw_auth');
+            state.isAuthenticated = storedAuth === 'true';
+            
+            if (state.isAuthenticated) {
+                els.userLoggedOut.classList.add('hidden');
+                els.userLoggedIn.classList.remove('hidden');
+                els.guestHistoryMsg.classList.add('hidden');
+            } else {
+                els.userLoggedOut.classList.remove('hidden');
+                els.userLoggedIn.classList.add('hidden');
+                els.guestHistoryMsg.classList.remove('hidden');
+            }
+        }
+
+        function toggleSidebar() {
+            const isClosed = els.sidebar.classList.contains('-translate-x-full');
+            if (isClosed) {
+                els.sidebar.classList.remove('-translate-x-full');
+                els.sidebarOverlay.classList.remove('hidden');
+            } else {
+                els.sidebar.classList.add('-translate-x-full');
+                els.sidebarOverlay.classList.add('hidden');
+            }
+        }
+
+        function adjustTextareaHeight() {
+            els.userInput.style.height = 'auto';
+            els.userInput.style.height = (els.userInput.scrollHeight) + 'px';
+            if(els.userInput.value === '') els.userInput.style.height = 'auto';
+        }
+
+        function resetChatUI() {
+            els.chatContainer.innerHTML = '';
+            els.chatContainer.appendChild(els.welcomeScreen);
+            els.welcomeScreen.classList.remove('hidden');
+        }
+
+        function renderHistory() {
+            // Clear list
+            const children = Array.from(els.chatHistoryList.children);
+            children.forEach(child => {
+                if (child.id !== 'guest-history-msg' && child.id !== 'empty-history-msg') {
+                    child.remove();
+                }
+            });
+
+            if (!state.isAuthenticated) {
+                els.emptyHistoryMsg.classList.add('hidden');
+                els.guestHistoryMsg.classList.remove('hidden');
+                return;
+            } else {
+                els.guestHistoryMsg.classList.add('hidden');
+            }
+
+            if (state.chats.length === 0) {
+                els.emptyHistoryMsg.classList.remove('hidden');
+            } else {
+                els.emptyHistoryMsg.classList.add('hidden');
+                state.chats.sort((a, b) => b.timestamp - a.timestamp).forEach(chat => {
+                    const div = document.createElement('div');
+                    div.className = 'group flex items-center justify-between p-2 rounded-lg hover:bg-gray-200 cursor-pointer transition-colors ' + (state.currentChatId === chat.id ? 'bg-gray-200' : '');
+                    
+                    const titleSpan = document.createElement('span');
+                    titleSpan.className = 'text-sm text-gray-700 truncate max-w-[160px]';
+                    titleSpan.textContent = chat.title || 'New Chat';
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity';
+                    deleteBtn.innerHTML = '<i class="fas fa-trash-alt text-xs"></i>';
+                    deleteBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        deleteChat(chat.id);
+                    };
+
+                    div.appendChild(titleSpan);
+                    div.appendChild(deleteBtn);
+                    div.onclick = () => loadChat(chat.id);
+                    
+                    els.chatHistoryList.insertBefore(div, els.chatHistoryList.firstChild);
+                });
+            }
+        }
+
+        function deleteChat(id) {
+            state.chats = state.chats.filter(c => c.id !== id);
+            localStorage.setItem('rw_chats', JSON.stringify(state.chats));
+            if (state.currentChatId === id) {
+                state.currentChatId = null;
+                resetChatUI();
+            }
+            renderHistory();
+        }
+
+        function loadChat(id) {
+            const chat = state.chats.find(c => c.id === id);
+            if (!chat) return;
+
+            state.currentChatId = id;
+            els.chatContainer.innerHTML = '';
+            
+            chat.messages.forEach(msg => {
+                appendMessage(msg.role, msg.content, false);
+            });
+
+            if (window.innerWidth < 768) toggleSidebar();
+            renderHistory(); // update active state styling
+        }
+
+        function createChat(firstMessage) {
+            const id = generateId();
+            const newChat = {
+                id: id,
+                title: firstMessage.substring(0, 30) + (firstMessage.length > 30 ? '...' : ''),
+                timestamp: Date.now(),
+                messages: []
+            };
+            
+            if (state.isAuthenticated) {
+                state.chats.unshift(newChat);
+                localStorage.setItem('rw_chats', JSON.stringify(state.chats));
+            } else {
+                // Reset guest history for a "new chat"
+                state.guestHistory = [];
+            }
+            
+            state.currentChatId = id;
+            renderHistory();
+            return newChat;
+        }
+
+        function updateChatHistory(role, content) {
+            if (!state.currentChatId) return;
+
+            if (state.isAuthenticated) {
+                const chatIndex = state.chats.findIndex(c => c.id === state.currentChatId);
+                if (chatIndex > -1) {
+                    state.chats[chatIndex].messages.push({ role, content });
+                    state.chats[chatIndex].timestamp = Date.now();
+                    localStorage.setItem('rw_chats', JSON.stringify(state.chats));
+                    renderHistory();
+                }
+            } else {
+                // Guest mode: save to memory only
+                state.guestHistory.push({ role, content });
+            }
+        }
+
+        function appendMessage(role, text, animate = true) {
+            els.welcomeScreen.classList.add('hidden');
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `flex w-full ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = `max-w-[85%] md:max-w-[75%] rounded-2xl px-5 py-3.5 text-sm leading-relaxed shadow-sm ${
+                role === 'user' 
+                ? 'bg-gray-100 text-gray-900 rounded-br-none' 
+                : 'bg-white border border-gray-100 text-gray-800 rounded-bl-none'
+            }`;
+            
+            if (role === 'model') {
+                // Simple markdown parsing
+                bubble.innerHTML = parseMarkdown(text);
+            } else {
+                bubble.textContent = text;
+            }
+
+            msgDiv.appendChild(bubble);
+            els.chatContainer.appendChild(msgDiv);
+            
+            // Auto scroll
+            els.chatContainer.scrollTop = els.chatContainer.scrollHeight;
+
+            return bubble;
+        }
+
+        function showTyping() {
+            const msgDiv = document.createElement('div');
+            msgDiv.id = 'typing-indicator';
+            msgDiv.className = 'flex w-full justify-start';
+            msgDiv.innerHTML = `
+                <div class="bg-white border border-gray-100 rounded-2xl rounded-bl-none px-5 py-4 shadow-sm">
+                    <div class="typing-indicator">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+            `;
+            els.chatContainer.appendChild(msgDiv);
+            els.chatContainer.scrollTop = els.chatContainer.scrollHeight;
+        }
+
+        function removeTyping() {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) indicator.remove();
+        }
+
+        function parseMarkdown(text) {
+            // Very basic markdown parser for safety
+            let html = text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                // Bold
+                .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                // Italic
+                .replace(/\*(.*?)\*/g, "<em>$1</em>")
+                // Code blocks
+                .replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>")
+                // Inline code
+                .replace(/`(.*?)`/g, "<code>$1</code>")
+                // Lists
+                .replace(/^\s*-\s(.*?)$/gm, "<li>$1</li>")
+                // Newlines to <br> (except in pre)
+                .replace(/\n/g, "<br>");
+            
+            // Wrap lists
+            // This simple regex replacer isn't perfect for nested lists but works for basic AI responses
+            if (html.includes("<li>")) {
+                html = html.replace(/(<li>.*<\/li>)/s, "<ul>$1</ul>");
+                // Cleanup multiple ULs if regex matches individually (hacky but functional for demo)
+            }
+
+            return `<div class="prose">${html}</div>`;
+        }
+
+        async function handleSend() {
+            const text = els.userInput.value.trim();
+            if (!text || state.isTyping) return;
+            
+            if (!state.apiKey) {
+                els.apiModal.classList.remove('hidden');
+                els.apiKeyInput.focus();
+                return;
+            }
+
+            // Clear Input
+            els.userInput.value = '';
+            adjustTextareaHeight();
+
+            // Setup Chat ID if new
+            if (!state.currentChatId) {
+                createChat(text);
+            } else {
+                // If guest and existing one-off chat, ensure we don't wipe it
+                // actually createChat is called only if no currentChatId.
+                // If guest has a currentChatId (in memory), we continue using it.
+            }
+
+            // User Message
+            appendMessage('user', text);
+            updateChatHistory('user', text);
+
+            // AI Response
+            state.isTyping = true;
+            showTyping();
+
+            try {
+                const response = await fetchGemini(text);
+                removeTyping();
+                appendMessage('model', response);
+                updateChatHistory('model', response);
+            } catch (error) {
+                removeTyping();
+                appendMessage('model', "Error: " + error.message);
+            } finally {
+                state.isTyping = false;
+            }
+        }
+
+        async function fetchGemini(prompt) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.apiKey}`;
+            
+            let messagesToContext = [];
+
+            if (state.isAuthenticated) {
+                const chat = state.chats.find(c => c.id === state.currentChatId);
+                if (chat) {
+                    messagesToContext = chat.messages;
+                }
+            } else {
+                messagesToContext = state.guestHistory;
+            }
+
+            // Safety fallback if something went wrong and the latest prompt isn't in history yet
+            // (though handleSend calls updateChatHistory first, so it should be there)
+            if (messagesToContext.length === 0 || messagesToContext[messagesToContext.length - 1].content !== prompt) {
+                // This handles the case where updateChatHistory might have failed or we just want to be sure
+                // But since we added it, let's trust the array. 
+                // Actually, if it's a brand new chat, updateChatHistory might have just run.
+            }
+
+            // Map to Gemini API format
+            // Limit context to last 20 messages to avoid excessive token usage in this demo
+            const recentMessages = messagesToContext.slice(-20);
+            
+            const contents = recentMessages.map(msg => ({
+                role: msg.role,
+                parts: [{ text: msg.content }]
+            }));
+
+            // If for some reason contents is empty (shouldn't be), add the prompt manually
+            if (contents.length === 0) {
+                contents.push({
+                    role: "user",
+                    parts: [{ text: prompt }]
+                });
+            }
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: contents
+                })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error?.message || 'Failed to fetch response');
+            }
+
+            const data = await response.json();
+            if (!data.candidates || data.candidates.length === 0) {
+                return "No response generated.";
+            }
+            return data.candidates[0].content.parts[0].text;
+        }
+
+        // Run
+        init();
+
+    </script>
+</body>
+</html>
