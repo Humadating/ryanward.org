@@ -186,7 +186,7 @@
            Slower animation (3s) and fade transition.
         */
         .play-animation {
-            animation: slideSequence 3s ease-in-out forwards;
+            animation: slideSequence 2s ease-in-out forwards;
         }
 
         /* Adjusted delays for slower animation */
@@ -362,11 +362,11 @@
 
             startAnimation();
 
-            // Wait 2500ms (2.5 seconds), then redirect.
+            // Wait 1800ms (1.8 seconds), then redirect.
             // This is while the overlay is still visible, creating a "fade into" effect.
             setTimeout(function() {
                 window.location.href = 'http://ryanward.org/ai';
-            }, 2500);
+            }, 1800);
         });
     </script>
 
