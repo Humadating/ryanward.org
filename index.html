@@ -5,34 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ryan Ward - Resume</title>
     <link rel="icon" href="https://github.com/Humadating/ryanward.org/blob/main/Pics/New%20Projectpol.png?raw=true">
+    
+    <!-- Google Font for the Animation -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+
     <style>
+        /* --- GLOBAL STYLES --- */
         body {
             font-family: Arial, sans-serif;
             line-height: 1.6;
             color: #333;
+            background-color: #f4f4f4; 
+            margin: 0;
+            padding: 0;
+        }
+
+        /* The main content wrapper */
+        #main-content {
             max-width: 8.5in;
             margin: 0 auto;
             padding: 0.75in;
-            background-color: #f4f4f4; /* Light grey background for the page */
+            padding-bottom: 2in;
+            opacity: 1; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
+
+        /* The White Resume Paper */
         .resume-container {
-            background-color: #fff; /* White paper background for the resume content */
+            width: 100%;
+            background-color: #fff;
             padding: 0.75in;
+            box-sizing: border-box;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: left;
         }
-        .header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        .name {
-            font-size: 28px;
-            font-weight: bold;
-            margin: 0;
-        }
-        .contact-info {
-            font-size: 14px;
-            margin: 5px 0;
-        }
+
+        .header { text-align: center; margin-bottom: 25px; }
+        .name { font-size: 28px; font-weight: bold; margin: 0; }
+        .contact-info { font-size: 14px; margin: 5px 0; }
+
         .section-title {
             font-size: 16px;
             font-weight: bold;
@@ -42,183 +57,318 @@
             margin-top: 20px;
             margin-bottom: 15px;
         }
-        .section-content {
-            font-size: 14px;
-        }
-        ul {
-            padding-left: 20px;
-            list-style-type: '•  ';
-        }
-        li {
-            margin-bottom: 5px;
-        }
-        .education-item, .experience-item {
-            margin-bottom: 20px;
-        }
+        .section-content { font-size: 14px; }
+        ul { padding-left: 20px; list-style-type: '•  '; }
+        li { margin-bottom: 5px; }
+        .education-item, .experience-item { margin-bottom: 20px; }
+        
         .item-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             font-size: 14px;
         }
-        .item-title {
-            font-weight: bold;
-        }
+        .item-title { font-weight: bold; }
         .item-location-date {
             text-align: right;
             white-space: nowrap;
             font-style: italic;
         }
-        .company-info {
-            font-style: italic;
-        }
+        .company-info { font-style: italic; }
         .company-url {
             font-style: normal;
             font-size: 12px;
             color: #555;
         }
-        .gpa {
-            padding-left: 20px;
-        }
+        .gpa { padding-left: 20px; }
         .expertise-container {
             display: flex;
             justify-content: space-between;
         }
-        .expertise-column {
-            width: 48%;
+        .expertise-column { width: 48%; }
+
+        /* "Use my AI" Button Style */
+        .ai-button-container {
+            text-align: center;
+            margin-top: 40px;
+            width: 100%;
+        }
+        .ai-button {
+            display: inline-block;
+            background-color: #002147; /* Navy Blue */
+            color: white;
+            padding: 15px 40px;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 5px;
+            font-size: 18px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 2px solid #002147;
+            cursor: pointer;
+        }
+        .ai-button:hover {
+            background-color: #B22234; /* Red on hover */
+            border-color: #B22234;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.2);
         }
 
-        /* --- START OF RESPONSIVE CODE --- */
-        /* These styles only apply on screens 600px or less */
+        /* --- RESPONSIVE RESUME --- */
         @media (max-width: 600px) {
-            body {
-                padding: 15px;
-            }
-            .resume-container {
-                padding: 20px;
-            }
-            .item-header {
-                flex-direction: column; /* Stack title and date vertically */
-                align-items: flex-start;
-            }
-            .item-location-date {
-                text-align: left; /* Align date to the left */
-                margin-top: 5px;
-            }
-            .expertise-container {
-                flex-direction: column; /* Stack the expertise columns */
-            }
-            .expertise-column {
-                width: 100%; /* Make each column full-width */
-            }
+            #main-content { padding: 15px; }
+            .resume-container { padding: 20px; }
+            .item-header { flex-direction: column; align-items: flex-start; }
+            .item-location-date { text-align: left; margin-top: 5px; }
+            .expertise-container { flex-direction: column; }
+            .expertise-column { width: 100%; }
         }
-        /* --- END OF RESPONSIVE CODE --- */
-
-        /* Styles for printing to PDF */
         @media print {
-            body {
-                background-color: #fff;
-                padding: 0;
+            body { background-color: #fff; padding: 0; overflow: visible; }
+            .resume-container { box-shadow: none; padding: 0; }
+            #loader-wrapper { display: none !important; }
+            .ai-button-container { display: none; }
+        }
+
+        /* --- ANIMATION OVERLAY STYLES --- */
+        #loader-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #f4f4f4;
+            z-index: 9999;
+            display: none; /* Hidden initially */
+            opacity: 0;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Anton', sans-serif;
+            transition: opacity 0.1s ease-in; /* Fast fade in */
+        }
+
+        .loader-content {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: fit-content;
+        }
+
+        .anim-text-row {
+            display: flex;
+            gap: 15px;
+            font-size: 8rem;
+            line-height: 0.9;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            opacity: 0; 
+            transform: translateX(-150vw);
+        }
+
+        .anim-ryan { color: #002147; }
+        .anim-ward { color: #B22234; }
+
+        .anim-line {
+            display: block;
+            width: 100%;
+            height: 8px;
+            background-color: #B22234;
+            opacity: 0;
+            transform: translateX(-150vw);
+        }
+
+        .anim-line-top { margin-bottom: 12px; }
+        .anim-line-bottom { margin-top: 12px; }
+
+        /* 
+           ANIMATION SETTINGS 
+           Slower animation (3s) and fade transition.
+        */
+        .play-animation {
+            animation: slideSequence 3s ease-in-out forwards;
+        }
+
+        /* Adjusted delays for slower animation */
+        .delay-1 { animation-delay: 0s; }
+        .delay-2 { animation-delay: 0.1s; } 
+        .delay-3 { animation-delay: 0.2s; } 
+
+        @keyframes slideSequence {
+            0% {
+                transform: translateX(-150vw) skewX(-20deg);
+                opacity: 0;
             }
-            .resume-container {
-                box-shadow: none;
-                padding: 0;
+            20% {
+                transform: translateX(0) skewX(0deg);
+                opacity: 1;
+            }
+            90% {
+                transform: translateX(0) skewX(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(0) skewX(0deg);
+                opacity: 0; /* Slight fade out at the very end */
             }
         }
+
+        /* Mobile Sizing */
+        @media (max-width: 768px) {
+            .anim-text-row { font-size: 3.5rem; gap: 8px; }
+            .anim-line { height: 5px; }
+            .anim-line-top { margin-bottom: 8px; }
+            .anim-line-bottom { margin-top: 8px; }
+        }
+
     </style>
 </head>
 <body>
-    <div style="text-align: center; margin-bottom: 20px;">
-        <img src="https://github.com/Humadating/ryanward.org/blob/main/New%20Project%20(3).webp?raw=true" alt="Ryan Ward" style="width: 100%; height: auto;">
-    </div>
-    <div class="resume-container">
-        <div class="header">
-            <p class="name">Ryan Ward</p>
-            <p class="contact-info">ryanwxbox@gmail.com | El Segundo, CA</p>
-        </div>
 
-        <div class="section">
-            <h2 class="section-title">Professional Summary</h2>
-            <div class="section-content">
-                <p>
-                    Entrepreneurial and driven high school senior with hands on experience in business ownership, digital media, and property management. Skilled in graphic design, effective communication, and philosophical inquiry. Willing to do anything and everything in his power to accomplish a goal.
-                </p>
+    <!-- ANIMATION OVERLAY -->
+    <div id="loader-wrapper">
+        <div class="loader-content">
+            <div id="anim-top" class="anim-line anim-line-top"></div>
+            <div id="anim-text" class="anim-text-row">
+                <span class="anim-ryan">RYAN</span>
+                <span class="anim-ward">WARD</span>
             </div>
-        </div>
-
-        <div class="section">
-            <h2 class="section-title">Education</h2>
-            <div class="section-content education-item">
-                <p class="item-title">Da Vinci Connect High School, El Segundo, CA</p>
-                <p>Senior, Graduating Class of 2026</p>
-                <ul class="gpa">
-                    <li>GPA: 3.1457</li>
-                    <li>Weighted GPA: 3.2707</li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2 class="section-title">Areas of Expertise</h2>
-            <div class="section-content expertise-container">
-                <div class="expertise-column">
-                    <ul>
-                        <li>Philosophy</li>
-                        <li>Communication</li>
-                        <li>Graphic Design (Adobe Suite)</li>
-                    </ul>
-                </div>
-                <div class="expertise-column">
-                    <ul>
-                        <li>Entrepreneurship</li>
-                        <li>Project Management</li>
-                        <li>Effective Debating Skills</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2 class="section-title">Professional Experience</h2>
-            <div class="section-content">
-                <div class="experience-item">
-                    <div class="item-header">
-                        <div>
-                            <span class="item-title">Co-Owner</span> | <span class="company-info">Captok | Full-time</span>
-                            <div class="company-url">https://captiontok.ai (No Longer active)</div>
-                        </div>
-                        <div class="item-location-date">
-                            <div>Fully online</div>
-                            <div>April 2023 - 2025</div>
-                        </div>
-                    </div>
-                    <ul>
-                        <li>Co-founded and managed operations for an AI-powered video captioning service.</li>
-                        <li>Led graphic design for marketing materials, website assets, and user interface using the Adobe Creative Suite.</li>
-                        <li>Drove business growth by communicating with partners, stakeholders, and potential clients.</li>
-                    </ul>
-                </div>
-
-                <div class="experience-item">
-                    <div class="item-header">
-                        <div>
-                            <span class="item-title">Property management Assistant</span> | <span class="company-info">401K Realty | Part-time</span>
-                            <div class="company-url">http://www.401krealty.com</div>
-                        </div>
-                        <div class="item-location-date">
-                            <div>13658 Hawthorne Blvd, Hawthorne, CA</div>
-                            <div>June 2020 - Present</div>
-                        </div>
-                    </div>
-                    <ul>
-                        <li>Assist in managing property listings, scheduling viewings, and handling client communications.</li>
-                        <li>Perform administrative tasks, including data entry and document organization, to support the realty team.</li>
-                        <li>Provide excellent customer service to current and prospective tenants and property owners.</li>
-                    </ul>
-                </div>
-            </div>
+            <div id="anim-bottom" class="anim-line anim-line-bottom"></div>
         </div>
     </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main-content">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img src="https://github.com/Humadating/ryanward.org/blob/main/New%20Project%20(3).webp?raw=true" alt="Ryan Ward" style="width: 100%; height: auto; max-width: 800px;">
+        </div>
+        
+        <div class="resume-container">
+            <div class="header">
+                <p class="name">Ryan Ward</p>
+                <p class="contact-info">ryanwxbox@gmail.com | El Segundo, CA</p>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Professional Summary</h2>
+                <div class="section-content">
+                    <p>
+                        Entrepreneurial and driven high school senior with hands on experience in business ownership, digital media, and property management. Skilled in graphic design, effective communication, and philosophical inquiry. Willing to do anything and everything in his power to accomplish a goal.
+                    </p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Education</h2>
+                <div class="section-content education-item">
+                    <p class="item-title">Da Vinci Connect High School, El Segundo, CA</p>
+                    <p>Senior, Graduating Class of 2026</p>
+                    <ul class="gpa">
+                        <li>GPA: 3.1457</li>
+                        <li>Weighted GPA: 3.2707</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Areas of Expertise</h2>
+                <div class="section-content expertise-container">
+                    <div class="expertise-column">
+                        <ul>
+                            <li>Philosophy</li>
+                            <li>Communication</li>
+                            <li>Graphic Design (Adobe Suite)</li>
+                        </ul>
+                    </div>
+                    <div class="expertise-column">
+                        <ul>
+                            <li>Entrepreneurship</li>
+                            <li>Project Management</li>
+                            <li>Effective Debating Skills</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Professional Experience</h2>
+                <div class="section-content">
+                    <div class="experience-item">
+                        <div class="item-header">
+                            <div>
+                                <span class="item-title">Co-Owner</span> | <span class="company-info">Captok | Full-time</span>
+                                <div class="company-url">https://captiontok.ai (No Longer active)</div>
+                            </div>
+                            <div class="item-location-date">
+                                <div>Fully online</div>
+                                <div>April 2023 - 2025</div>
+                            </div>
+                        </div>
+                        <ul>
+                            <li>Co-founded and managed operations for an AI-powered video captioning service.</li>
+                            <li>Led graphic design for marketing materials, website assets, and user interface using the Adobe Creative Suite.</li>
+                            <li>Drove business growth by communicating with partners, stakeholders, and potential clients.</li>
+                        </ul>
+                    </div>
+
+                    <div class="experience-item">
+                        <div class="item-header">
+                            <div>
+                                <span class="item-title">Property management Assistant</span> | <span class="company-info">401K Realty | Part-time</span>
+                                <div class="company-url">http://www.401krealty.com</div>
+                            </div>
+                            <div class="item-location-date">
+                                <div>13658 Hawthorne Blvd, Hawthorne, CA</div>
+                                <div>June 2020 - Present</div>
+                            </div>
+                        </div>
+                        <ul>
+                            <li>Assist in managing property listings, scheduling viewings, and handling client communications.</li>
+                            <li>Perform administrative tasks, including data entry and document organization, to support the realty team.</li>
+                            <li>Provide excellent customer service to current and prospective tenants and property owners.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div> 
+        
+        <!-- BUTTON SECTION -->
+        <div class="ai-button-container">
+            <button id="ai-redirect-btn" class="ai-button">Use my AI</button>
+        </div>
+    </div>
+
+    <!-- LOGIC -->
+    <script>
+        const loader = document.getElementById('loader-wrapper');
+        const topLine = document.getElementById('anim-top');
+        const textRow = document.getElementById('anim-text');
+        const bottomLine = document.getElementById('anim-bottom');
+        const btn = document.getElementById('ai-redirect-btn');
+
+        function startAnimation() {
+            topLine.classList.add('play-animation', 'delay-1');
+            bottomLine.classList.add('play-animation', 'delay-2');
+            textRow.classList.add('play-animation', 'delay-3');
+        }
+
+        btn.addEventListener('click', function(e) {
+            e.preventDefault(); 
+
+            loader.style.display = 'flex';
+            void loader.offsetWidth; 
+            loader.style.opacity = '1';
+            document.body.style.overflow = 'hidden';
+
+            startAnimation();
+
+            // Wait 2500ms (2.5 seconds), then redirect.
+            // This is while the overlay is still visible, creating a "fade into" effect.
+            setTimeout(function() {
+                window.location.href = 'http://ryanward.org/ai';
+            }, 2500);
+        });
+    </script>
 
 </body>
 </html>
